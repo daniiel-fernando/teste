@@ -1,0 +1,33 @@
+# Dependências do Cliente de Notificações Jotanunes
+# Versão 2.1.0 - Melhorada para instalação robusta
+
+# Dependências obrigatórias (incluídas no Python padrão)
+# - tkinter (incluído no Python)
+# - json (incluído no Python)
+# - urllib (incluído no Python)
+# - socket (incluído no Python)
+# - threading (incluído no Python)
+# - logging (incluído no Python)
+
+# Dependências opcionais (melhoram funcionalidades)
+# Instale apenas se necessário e disponível
+
+# Para requisições HTTP melhoradas (opcional)
+requests>=2.25.0
+
+# Para processamento de imagens (opcional)
+Pillow>=8.0.0
+
+# Para ícone na bandeja do sistema (opcional)
+pystray>=0.17.0
+
+# Para notificações do sistema (opcional)
+plyer>=2.0.0
+
+# Para compilação com PyInstaller (apenas para desenvolvimento)
+pyinstaller>=4.0
+
+# Dependências de desenvolvimento (opcional)
+# setuptools>=50.0.0
+# wheel>=0.36.0
+

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Notificações Corporativas - Jotanunes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/jnunes_logo.png') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <img src="{{ url_for('static', filename='images/jnunes_logo.png') }}" alt="Jotanunes" class="loading-logo">
+            <div class="loading-spinner"></div>
+            <p>Carregando Sistema...</p>
+        </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-screen">
+        <div class="login-container">
+            <div class="login-header">
+                <img src="{{ url_for('static', filename='images/jnunes_logo.png') }}" alt="Jotanunes" class="login-logo">
+                <h1>Sistema de Notificações</h1>
+                <p>Faça login para continuar</p>
+            </div>
+            
+            <form id="login-form" class="login-form">
+                <div class="form-group">
+                    <label for="username">Usuário</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Entrar
+                </button>
+            </form>
+            
+            <div id="login-error" class="error-message" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="main-app" class="main-app" style="display: none;">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <img id="header-logo" src="{{ url_for('static', filename='images/jnunes_logo.png') }}" alt="Jotanunes" class="header-logo">
+                <h1>Sistema de Notificações</h1>
+            </div>
+            
+            <div class="header-right">
+                <button id="theme-toggle" class="btn btn-icon" title="Alternar tema">
+                    <i class="fas fa-moon"></i>
+                </button>
+                
+                <div class="user-menu">
+                    <button id="user-menu-btn" class="btn btn-icon">
+                        <i class="fas fa-user"></i>
+                        <span id="user-name">Usuário</span>
+                    </button>
+                    
+                    <div id="user-dropdown" class="dropdown-menu">
+                        <a href="#" id="profile-link">
+                            <i class="fas fa-user-cog"></i>
+                            Perfil
+                        </a>
+                        <a href="#" id="logout-link">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Sair
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="app-nav">
+            <button class="nav-btn active" data-tab="messages">
+                <i class="fas fa-comments"></i>
+                <span>Mensagens</span>
+            </button>
+            
+            <button class="nav-btn" data-tab="schedule">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Agendamentos</span>
+            </button>
+            
+            <button class="nav-btn" data-tab="history">
+                <i class="fas fa-history"></i>
+                <span>Histórico</span>
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="app-main">
+            <!-- Messages Tab -->
+            <div id="messages-tab" class="tab-content active">
+                <div class="content-header">
+                    <h2>Enviar Mensagem</h2>
+                    <p>Envie mensagens de texto e imagens para os usuários</p>
+                </div>
+                
+                <div class="message-composer">
+                    <form id="message-form" class="message-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="message-recipients">Destinatários</label>
+                                <select id="message-recipients" name="recipients" multiple>
+                                    <option value="all">Todos os Departamentos</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="message-content">Mensagem</label>
+                            <textarea id="message-content" name="content" placeholder="Digite sua mensagem aqui..." rows="4"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="message-image">Imagem (opcional)</label>
+                            <div class="file-upload">
+                                <input type="file" id="message-image" name="image" accept="image/*">
+                                <div class="file-upload-area">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>Clique ou arraste uma imagem aqui</p>
+                                    <small>PNG, JPG, GIF até 16MB</small>
+                                </div>
+                                <div id="image-preview" class="image-preview" style="display: none;"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" id="clear-message" class="btn btn-secondary">
+                                <i class="fas fa-times"></i>
+                                Limpar
+                            </button>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                                Enviar Mensagem
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Schedule Tab -->
+            <div id="schedule-tab" class="tab-content">
+                <div class="content-header">
+                    <h2>Agendamentos</h2>
+                    <p>Gerencie mensagens agendadas</p>
+                </div>
+                
+                <div class="schedule-actions">
+                    <button id="new-schedule-btn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        Novo Agendamento
+                    </button>
+                </div>
+                
+                <div id="schedules-list" class="schedules-list">
+                    <!-- Agendamentos serão carregados aqui -->
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div id="history-tab" class="tab-content">
+                <div class="content-header">
+                    <h2>Histórico de Mensagens</h2>
+                    <p>Visualize mensagens enviadas</p>
+                </div>
+                
+                <div id="messages-history" class="messages-history">
+                    <!-- Histórico será carregado aqui -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Schedule Modal -->
+    <div id="schedule-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Novo Agendamento</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            
+            <form id="schedule-form" class="schedule-form">
+                <div class="form-group">
+                    <label for="schedule-title">Título</label>
+                    <input type="text" id="schedule-title" name="title" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="schedule-content">Mensagem</label>
+                    <textarea id="schedule-content" name="content" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="schedule-image">Imagem (opcional)</label>
+                    <input type="file" id="schedule-image" name="image" accept="image/*">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="schedule-time">Horário</label>
+                        <input type="time" id="schedule-time" name="time" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="schedule-days">Frequência</label>
+                        <select id="schedule-days" name="days" required>
+                            <option value="daily">Todos os dias</option>
+                            <option value="weekdays">Dias úteis</option>
+                            <option value="weekends">Fins de semana</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="schedule-recipients">Destinatários</label>
+                    <select id="schedule-recipients" name="recipients" multiple>
+                        <option value="all">Todos os Departamentos</option>
+                    </select>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Agendamento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
+

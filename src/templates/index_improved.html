@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Notificações Corporativas - Jotanunes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles_improved.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/jnunes_logo.png') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo-container">
+                <img src="{{ url_for('static', filename='images/jnunes_logo.png') }}" alt="Jotanunes" class="loading-logo">
+                <div class="loading-pulse"></div>
+            </div>
+            <div class="loading-spinner">
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+            </div>
+            <p class="loading-text">Carregando Sistema de Notificações...</p>
+            <div class="loading-progress">
+                <div class="progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-screen">
+        <div class="login-background">
+            <div class="login-shapes">
+                <div class="shape shape-1"></div>
+                <div class="shape shape-2"></div>
+                <div class="shape shape-3"></div>
+            </div>
+        </div>
+        
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <div class="logo-container">
+                        <img src="{{ url_for('static', filename='images/jnunes_logo.png') }}" alt="Jotanunes" class="login-logo">
+                    </div>
+                    <h1 class="login-title">Sistema de Notificações</h1>
+                    <p class="login-subtitle">Acesso restrito ao grupo GG_TECNOLOGIA</p>
+                </div>
+                
+                <form id="login-form" class="login-form">
+                    <div class="form-group">
+                        <label for="username" class="form-label">
+                            <i class="fas fa-user"></i>
+                            Usuário
+                        </label>
+                        <input type="text" id="username" name="username" class="form-input" placeholder="Digite seu usuário" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock"></i>
+                            Senha
+                        </label>
+                        <input type="password" id="password" name="password" class="form-input" placeholder="Digite sua senha" required>
+                        <button type="button" class="password-toggle" onclick="togglePassword()">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-login">
+                        <span class="btn-text">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Entrar no Sistema
+                        </span>
+                        <div class="btn-loading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Autenticando...
+                        </div>
+                    </button>
+                </form>
+                
+                <div id="login-error" class="error-message" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span class="error-text"></span>
+                </div>
+                
+                <div class="login-footer">
+                    <p><i class="fas fa-shield-alt"></i> Autenticação via Active Directory</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="main-app" class="main-app" style="display: none;">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="logo-container">
+                    <img id="header-logo" src="{{ url_for('static', filename='images/jnunes_logo.png') }}" alt="Jotanunes" class="header-logo">
+                </div>
+                <div class="header-title">
+                    <h1>Sistema de Notificações</h1>
+                    <span class="header-subtitle">Corporativo Jotanunes</span>
+                </div>
+            </div>
+            
+            <div class="header-center">
+                <div class="status-indicator">
+                    <div class="status-dot online"></div>
+                    <span id="online-count">0</span> computadores online
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <button id="notifications-btn" class="btn btn-icon" title="Notificações">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" style="display: none;">0</span>
+                </button>
+                
+                <button id="theme-toggle" class="btn btn-icon" title="Alternar tema">
+                    <i class="fas fa-moon"></i>
+                </button>
+                
+                <div class="user-menu">
+                    <button id="user-menu-btn" class="btn btn-user">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-info">
+                            <span id="user-name" class="user-name">Usuário</span>
+                            <span class="user-role">Administrador</span>
+                        </div>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    
+                    <div id="user-dropdown" class="dropdown-menu">
+                        <a href="#" id="profile-link" class="dropdown-item">
+                            <i class="fas fa-user-cog"></i>
+                            <span>Perfil</span>
+                        </a>
+                        <a href="#" id="settings-link" class="dropdown-item">
+                            <i class="fas fa-cog"></i>
+                            <span>Configurações</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" id="logout-link" class="dropdown-item">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Sair</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="app-nav">
+            <div class="nav-container">
+                <button class="nav-btn active" data-tab="messages">
+                    <div class="nav-icon">
+                        <i class="fas fa-paper-plane"></i>
+                    </div>
+                    <span class="nav-text">Enviar Mensagens</span>
+                    <div class="nav-indicator"></div>
+                </button>
+                
+                <button class="nav-btn" data-tab="schedule">
+                    <div class="nav-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <span class="nav-text">Agendamentos</span>
+                    <div class="nav-indicator"></div>
+                </button>
+                
+                <button class="nav-btn" data-tab="computers">
+                    <div class="nav-icon">
+                        <i class="fas fa-desktop"></i>
+                    </div>
+                    <span class="nav-text">Computadores</span>
+                    <div class="nav-indicator"></div>
+                </button>
+                
+                <button class="nav-btn" data-tab="history">
+                    <div class="nav-icon">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <span class="nav-text">Histórico</span>
+                    <div class="nav-indicator"></div>
+                </button>
+                
+                <button class="nav-btn" data-tab="analytics">
+                    <div class="nav-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <span class="nav-text">Relatórios</span>
+                    <div class="nav-indicator"></div>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="app-main">
+            <!-- Messages Tab -->
+            <div id="messages-tab" class="tab-content active">
+                <div class="content-header">
+                    <div class="header-info">
+                        <h2><i class="fas fa-paper-plane"></i> Enviar Mensagem</h2>
+                        <p>Envie mensagens de texto e imagens para os departamentos da empresa</p>
+                    </div>
+                    <div class="header-actions">
+                        <button id="quick-message-btn" class="btn btn-secondary">
+                            <i class="fas fa-bolt"></i>
+                            Mensagem Rápida
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="message-composer">
+                    <form id="message-form" class="message-form">
+                        <!-- Destinatários -->
+                        <div class="form-section">
+                            <h3 class="section-title">
+                                <i class="fas fa-users"></i>
+                                Destinatários
+                            </h3>
+                            
+                            <div class="recipients-grid">
+                                <div class="recipient-option">
+                                    <input type="checkbox" id="all-departments" name="recipients" value="all" class="recipient-checkbox">
+                                    <label for="all-departments" class="recipient-label">
+                                        <div class="recipient-icon all">
+                                            <i class="fas fa-building"></i>
+                                        </div>
+                                        <div class="recipient-info">
+                                            <span class="recipient-name">Todas as OUs</span>
+                                            <span class="recipient-desc">Enviar para todos os departamentos</span>
+                                            <span class="recipient-count" id="all-count">0 computadores</span>
+                                        </div>
+                                    </label>
+                                </div>
+                                
+                                <div class="recipient-option">
+                                    <input type="checkbox" id="ti-department" name="recipients" value="TI" class="recipient-checkbox">
+                                    <label for="ti-department" class="recipient-label">
+                                        <div class="recipient-icon ti">
+                                            <i class="fas fa-laptop-code"></i>
+                                        </div>
+                                        <div class="recipient-info">
+                                            <span class="recipient-name">TI / Tecnologia</span>
+                                            <span class="recipient-desc">Departamento de Tecnologia da Informação</span>
+                                            <span class="recipient-count" id="ti-count">0 computadores</span>
+                                        </div>
+                                    </label>
+                                </div>
+                                
+                                <div class="recipient-option">
+                                    <input type="checkbox" id="operacional-department" name="recipients" value="OPERACIONAL" class="recipient-checkbox">
+                                    <label for="operacional-department" class="recipient-label">
+                                        <div class="recipient-icon operacional">
+                                            <i class="fas fa-hard-hat"></i>
+                                        </div>
+                                        <div class="recipient-info">
+                                            <span class="recipient-name">Operacional</span>
+                                            <span class="recipient-desc">Equipes de campo e produção</span>
+                                            <span class="recipient-count" id="operacional-count">0 computadores</span>
+                                        </div>
+                                    </label>
+                                </div>
+                                
+                                <div class="recipient-option">
+                                    <input type="checkbox" id="gestores-department" name="recipients" value="GESTORES" class="recipient-checkbox">
+                                    <label for="gestores-department" class="recipient-label">
+                                        <div class="recipient-icon gestores">
+                                            <i class="fas fa-user-tie"></i>
+                                        </div>
+                                        <div class="recipient-info">
+                                            <span class="recipient-name">Gestores</span>
+                                            <span class="recipient-desc">Coordenadores e supervisores</span>
+                                            <span class="recipient-count" id="gestores-count">0 computadores</span>
+                                        </div>
+                                    </label>
+                                </div>
+                                
+                                <div class="recipient-option">
+                                    <input type="checkbox" id="diretoria-department" name="recipients" value="DIRETORIA" class="recipient-checkbox">
+                                    <label for="diretoria-department" class="recipient-label">
+                                        <div class="recipient-icon diretoria">
+                                            <i class="fas fa-crown"></i>
+                                        </div>
+                                        <div class="recipient-info">
+                                            <span class="recipient-name">Diretoria</span>
+                                            <span class="recipient-desc">Diretores e alta gestão</span>
+                                            <span class="recipient-count" id="diretoria-count">0 computadores</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Conteúdo da Mensagem -->
+                        <div class="form-section">
+                            <h3 class="section-title">
+                                <i class="fas fa-edit"></i>
+                                Conteúdo da Mensagem
+                            </h3>
+                            
+                            <div class="form-group">
+                                <label for="message-title" class="form-label">Título da Mensagem</label>
+                                <input type="text" id="message-title" name="title" class="form-input" placeholder="Digite um título para a mensagem...">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="message-content" class="form-label">Mensagem</label>
+                                <div class="textarea-container">
+                                    <textarea id="message-content" name="content" class="form-textarea" placeholder="Digite sua mensagem aqui..." rows="6"></textarea>
+                                    <div class="textarea-tools">
+                                        <button type="button" class="tool-btn" title="Negrito">
+                                            <i class="fas fa-bold"></i>
+                                        </button>
+                                        <button type="button" class="tool-btn" title="Itálico">
+                                            <i class="fas fa-italic"></i>
+                                        </button>
+                                        <button type="button" class="tool-btn" title="Emoji">
+                                            <i class="fas fa-smile"></i>
+                                        </button>
+                                    </div>
+                                    <div class="char-counter">
+                                        <span id="char-count">0</span> / 1000 caracteres
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Anexos -->
+                        <div class="form-section">
+                            <h3 class="section-title">
+                                <i class="fas fa-paperclip"></i>
+                                Anexos (Opcional)
+                            </h3>
+                            
+                            <div class="form-group">
+                                <div class="file-upload-area" id="file-upload-area">
+                                    <input type="file" id="message-image" name="image" accept="image/*" style="display: none;">
+                                    <div class="upload-content">
+                                        <div class="upload-icon">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                        </div>
+                                        <div class="upload-text">
+                                            <p><strong>Clique ou arraste uma imagem aqui</strong></p>
+                                            <p>PNG, JPG, GIF até 16MB</p>
+                                        </div>
+                                    </div>
+                                    <div id="image-preview" class="image-preview" style="display: none;">
+                                        <img id="preview-img" src="" alt="Preview">
+                                        <div class="preview-info">
+                                            <span id="file-name"></span>
+                                            <span id="file-size"></span>
+                                        </div>
+                                        <button type="button" id="remove-image" class="btn-remove">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Opções Avançadas -->
+                        <div class="form-section">
+                            <h3 class="section-title">
+                                <i class="fas fa-cog"></i>
+                                Opções Avançadas
+                            </h3>
+                            
+                            <div class="options-grid">
+                                <div class="option-item">
+                                    <input type="checkbox" id="urgent-message" name="urgent" class="option-checkbox">
+                                    <label for="urgent-message" class="option-label">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        Mensagem Urgente
+                                    </label>
+                                </div>
+                                
+                                <div class="option-item">
+                                    <input type="checkbox" id="require-confirmation" name="confirmation" class="option-checkbox">
+                                    <label for="require-confirmation" class="option-label">
+                                        <i class="fas fa-check-circle"></i>
+                                        Exigir Confirmação de Leitura
+                                    </label>
+                                </div>
+                                
+                                <div class="option-item">
+                                    <input type="checkbox" id="sound-notification" name="sound" class="option-checkbox" checked>
+                                    <label for="sound-notification" class="option-label">
+                                        <i class="fas fa-volume-up"></i>
+                                        Som de Notificação
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Ações -->
+                        <div class="form-actions">
+                            <button type="button" id="save-draft" class="btn btn-secondary">
+                                <i class="fas fa-save"></i>
+                                Salvar Rascunho
+                            </button>
+                            
+                            <button type="button" id="preview-message" class="btn btn-secondary">
+                                <i class="fas fa-eye"></i>
+                                Visualizar
+                            </button>
+                            
+                            <button type="button" id="clear-message" class="btn btn-outline">
+                                <i class="fas fa-trash"></i>
+                                Limpar
+                            </button>
+                            
+                            <button type="submit" class="btn btn-primary btn-send">
+                                <span class="btn-text">
+                                    <i class="fas fa-paper-plane"></i>
+                                    Enviar Mensagem
+                                </span>
+                                <div class="btn-loading" style="display: none;">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    Enviando...
+                                </div>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Schedule Tab -->
+            <div id="schedule-tab" class="tab-content">
+                <div class="content-header">
+                    <div class="header-info">
+                        <h2><i class="fas fa-calendar-alt"></i> Agendamentos</h2>
+                        <p>Agende mensagens para envio automático</p>
+                    </div>
+                    <div class="header-actions">
+                        <button id="new-schedule-btn" class="btn btn-primary">
+                            <i class="fas fa-plus"></i>
+                            Novo Agendamento
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="schedule-content">
+                    <div class="schedule-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="active-schedules">0</span>
+                                <span class="stat-label">Agendamentos Ativos</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="next-execution">--</span>
+                                <span class="stat-label">Próxima Execução</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-paper-plane"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="sent-today">0</span>
+                                <span class="stat-label">Enviadas Hoje</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="schedule-list" id="schedule-list">
+                        <!-- Agendamentos serão carregados aqui -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Computers Tab -->
+            <div id="computers-tab" class="tab-content">
+                <div class="content-header">
+                    <div class="header-info">
+                        <h2><i class="fas fa-desktop"></i> Computadores</h2>
+                        <p>Monitore o status dos computadores da rede</p>
+                    </div>
+                    <div class="header-actions">
+                        <button id="refresh-computers" class="btn btn-secondary">
+                            <i class="fas fa-sync-alt"></i>
+                            Atualizar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="computers-content">
+                    <div class="computers-filters">
+                        <div class="filter-group">
+                            <label>Departamento:</label>
+                            <select id="department-filter" class="filter-select">
+                                <option value="">Todos</option>
+                                <option value="TI">TI</option>
+                                <option value="OPERACIONAL">Operacional</option>
+                                <option value="GESTORES">Gestores</option>
+                                <option value="DIRETORIA">Diretoria</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Status:</label>
+                            <select id="status-filter" class="filter-select">
+                                <option value="">Todos</option>
+                                <option value="online">Online</option>
+                                <option value="offline">Offline</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <input type="text" id="search-computers" class="filter-input" placeholder="Buscar por nome ou usuário...">
+                        </div>
+                    </div>
+                    
+                    <div class="computers-grid" id="computers-grid">
+                        <!-- Computadores serão carregados aqui -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div id="history-tab" class="tab-content">
+                <div class="content-header">
+                    <div class="header-info">
+                        <h2><i class="fas fa-history"></i> Histórico</h2>
+                        <p>Visualize o histórico de mensagens enviadas</p>
+                    </div>
+                    <div class="header-actions">
+                        <button id="export-history" class="btn btn-secondary">
+                            <i class="fas fa-download"></i>
+                            Exportar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="history-content">
+                    <div class="history-filters">
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label>Período:</label>
+                                <select id="period-filter" class="filter-select">
+                                    <option value="today">Hoje</option>
+                                    <option value="week">Esta Semana</option>
+                                    <option value="month">Este Mês</option>
+                                    <option value="custom">Personalizado</option>
+                                </select>
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label>Departamento:</label>
+                                <select id="history-department-filter" class="filter-select">
+                                    <option value="">Todos</option>
+                                    <option value="TI">TI</option>
+                                    <option value="OPERACIONAL">Operacional</option>
+                                    <option value="GESTORES">Gestores</option>
+                                    <option value="DIRETORIA">Diretoria</option>
+                                </select>
+                            </div>
+                            
+                            <div class="filter-group">
+                                <input type="text" id="search-history" class="filter-input" placeholder="Buscar mensagens...">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="history-list" id="history-list">
+                        <!-- Histórico será carregado aqui -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div id="analytics-tab" class="tab-content">
+                <div class="content-header">
+                    <div class="header-info">
+                        <h2><i class="fas fa-chart-bar"></i> Relatórios</h2>
+                        <p>Análise e estatísticas do sistema</p>
+                    </div>
+                    <div class="header-actions">
+                        <button id="generate-report" class="btn btn-primary">
+                            <i class="fas fa-file-pdf"></i>
+                            Gerar Relatório
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="analytics-content">
+                    <div class="analytics-grid">
+                        <div class="chart-card">
+                            <h3>Mensagens por Departamento</h3>
+                            <canvas id="department-chart"></canvas>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <h3>Mensagens por Período</h3>
+                            <canvas id="timeline-chart"></canvas>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <h3>Status dos Computadores</h3>
+                            <canvas id="status-chart"></canvas>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <h3>Taxa de Entrega</h3>
+                            <canvas id="delivery-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="preview-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Visualizar Mensagem</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="preview-content">
+                <!-- Preview content -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('preview-modal')">Fechar</button>
+                <button class="btn btn-primary" onclick="sendMessage()">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/app_improved.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auth_improved.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notifications_improved.js') }}"></script>
+</body>
+</html>
+
