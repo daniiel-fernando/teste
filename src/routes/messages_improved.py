@@ -1,14 +1,8 @@
-"""
-Rotas de Mensagens Melhoradas
-Sistema de Notificações Jotanunes - Versão 2.2.0
-✅ Implementa correções para notificações repetidas
-"""
-
-from flask import Blueprint, request, jsonify
-from datetime import datetime, timedelta
-import logging
-import sqlite3
 import os
+import logging
+from flask import Blueprint, request, jsonify, session
+from datetime import datetime, timedelta
+import sqlite3
 import json
 
 # Importa decorator de autenticação
@@ -137,7 +131,7 @@ def get_unread_messages_for_computer(computer_name):
             ORDER BY m.urgent DESC, m.created_at DESC
             LIMIT 50
         """,
-            (computer_id, f'%"{department}"%', '%"all"%'),
+            (computer_id, f'%"%{department}%"%', '%"all"%'),
         )
 
         messages = []
@@ -500,6 +494,11 @@ def send_message():
     Envia uma nova mensagem para os computadores.
     """
     try:
+        # Obtém o ID do usuário logado do objeto request, que é populado pelo decorator @require_auth
+        sender_id = getattr(request, "current_user_id", None)
+        if not sender_id:
+            return jsonify({"success": False, "message": "Usuário não autenticado ou ID não disponível."}), 401
+
         title = request.form.get("title")
         content = request.form.get("content")
         recipients = request.form.getlist("recipients")
@@ -512,6 +511,7 @@ def send_message():
         if not title or not content:
             return jsonify({"success": False, "message": "Título e conteúdo são obrigatórios"}), 400
 
+        # Se nem destinatários específicos nem 'Todas as OUs' foram selecionados, retorna erro 400
         if not recipients and target_ou != "all":
             return jsonify({"success": False, "message": "Selecione pelo menos um destinatário ou 'Todas as OUs'"}), 400
 
@@ -543,20 +543,26 @@ def send_message():
                 sound_enabled,
                 json.dumps(recipients), # Armazena como JSON string
                 target_ou,
-                request.user.get("id") # Obtém o ID do usuário logado
+                sender_id # Usa o sender_id obtido do decorator
             ),
         )
         message_id = cursor.lastrowid
 
         # Para cada computador que deve receber a mensagem, insere um registro em message_read_status
+        computers_to_notify = []
         if target_ou == "all":
-            cursor.execute("SELECT id, computer_name FROM computers")
+            cursor.execute("SELECT id, computer_name FROM computers WHERE status = 'online'")
             computers_to_notify = cursor.fetchall()
-        else:
-            # Busca computadores pelos departamentos selecionados
+        elif recipients:
+            # Busca computadores pelos departamentos selecionados que estão online
             placeholders = ", ".join(["?"] * len(recipients))
-            cursor.execute(f"SELECT id, computer_name FROM computers WHERE department IN ({placeholders})", recipients)
+            cursor.execute(f"SELECT id, computer_name FROM computers WHERE department IN ({placeholders}) AND status = 'online'", recipients)
             computers_to_notify = cursor.fetchall()
+
+        if not computers_to_notify:
+            logger.warning(f"Mensagem '{title}' não enviada: Nenhum computador online encontrado para os destinatários/OU selecionados.")
+            conn.close()
+            return jsonify({"success": False, "message": "Nenhum computador online encontrado para enviar a mensagem. Verifique os destinatários ou o status dos computadores."}), 400
 
         for comp_id, comp_name in computers_to_notify:
             cursor.execute(
@@ -572,7 +578,7 @@ def send_message():
 
     except Exception as e:
         logger.error(f"Erro ao enviar mensagem: {e}")
-        return jsonify({"success": False, "message": "Erro ao enviar mensagem. Verifique sua conexão e tente novamente."}), 500
+        return jsonify({"success": False, "message": f"Erro ao enviar mensagem: {str(e)}. Verifique o log do servidor para mais detalhes."}), 500
 
 
 
@@ -619,5 +625,7 @@ def get_message_history():
     except Exception as e:
         logger.error(f"Erro ao obter histórico de mensagens: {e}")
         return jsonify({"success": False, "message": "Erro ao obter histórico de mensagens"}), 500
+
+
 
 

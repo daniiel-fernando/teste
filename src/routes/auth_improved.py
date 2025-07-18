@@ -1,21 +1,18 @@
-"""
-Rotas de Autenticação Melhoradas
-Sistema de Notificações Jotanunes - Versão 2.2.0
-Implementa correções do checklist de autenticação
-"""
-
+import os
+import logging
 from flask import Blueprint, request, jsonify, session
 from datetime import datetime, timedelta
-import logging
-import sqlite3
 import jwt
-import os
+import sqlite3
 
 # Importa gerenciador de tokens avançado
 from src.utils.token_manager import TokenManager
 
 # Configurações
 from src.config import Config
+
+# Importa a nova classe ActiveDirectoryAuth
+from src.utils.ad_auth import ActiveDirectoryAuth, is_ad_available
 
 auth_bp = Blueprint("auth_improved", __name__)
 
@@ -26,12 +23,19 @@ token_manager = TokenManager(
     access_token_expiry_hours=Config.JWT_ACCESS_TOKEN_EXPIRES_HOURS,
     refresh_token_expiry_days=Config.JWT_REFRESH_TOKEN_EXPIRES_DAYS,
 )
+
 # Configura log
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
+# Instância global para autenticação AD
+ad_auth_instance = ActiveDirectoryAuth(
+    server_url=os.environ.get("AD_SERVER_URL"),
+    domain=os.environ.get("AD_DOMAIN"),
+    base_dn=os.environ.get("AD_BASE_DN"),
+)
 
 def get_db_connection():
     """Obtém conexão com o banco de dados"""
@@ -60,75 +64,12 @@ def get_db_connection():
     return conn
 
 
-def generate_token(user_data):
-    """Gera token JWT para o usuário"""
-    payload = {
-        "user_id": user_data["id"],
-        "username": user_data["username"],
-        "exp": datetime.utcnow()
-        + timedelta(hours=Config.JWT_ACCESS_TOKEN_EXPIRES_HOURS),
-        "iat": datetime.utcnow(),
-    }
-    return jwt.encode(payload, Config.SECRET_KEY, algorithm="HS256")
-
-
-def verify_token(token):
-    """Verifica e decodifica token JWT"""
-    try:
-        payload = jwt.decode(token, Config.SECRET_KEY, algorithms=["HS256"])
-        return payload
-    except jwt.ExpiredSignatureError:
-        return None
-    except jwt.InvalidTokenError:
-        return None
-
-
-from src.utils.ad_auth import authenticate_ad_user, is_ad_available
-
-
 def authenticate_user(username: str, password: str) -> dict | None:
     """Autentica o usuário contra o Active Directory ou fallback local.
-
-    Nota: A verificação de grupo foi removida. Qualquer usuário válido do LDAP
-    pode se autenticar no sistema.
     """
-    # Fallback local para depuração
-    if username == "admin" and password == "admin123":
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE username = ?", ("admin",))
-        db_user = cursor.fetchone()
-        if not db_user:
-            cursor.execute(
-                """
-                INSERT INTO users (username, name, email, department, last_login)
-                VALUES (?, ?, ?, ?, ?)
-            """,
-                (
-                    "admin",
-                    "Administrador Local",
-                    "admin@jotanunes.net",
-                    "TI",
-                    datetime.now(),
-                ),
-            )
-            conn.commit()
-            user_id = cursor.lastrowid
-        else:
-            user_id = db_user["id"]
-
-        conn.close()
-        return {
-            "username": "admin",
-            "display_name": "Administrador Local",
-            "email": "admin@jotanunes.net",
-            "department": "TI",
-            "is_authorized": True,
-            "id": user_id,
-        }
-
-    # Autenticação via Active Directory
-    return authenticate_ad_user(username, password)
+    # Tenta autenticar via Active Directory (inclui fallback local para 'admin')
+    user_info = ad_auth_instance.authenticate_and_authorize(username, password)
+    return user_info
 
 
 @auth_bp.route("/api/auth/login", methods=["POST"])
@@ -435,7 +376,9 @@ def require_auth(f):
 @auth_bp.route("/api/auth/tokens", methods=["GET"])
 @require_auth
 def list_user_tokens():
-    """Lista tokens ativos do usuário"""
+    """
+    Lista tokens ativos do usuário
+    """
     try:
         user_id = getattr(request, "current_user_id", session.get("user_id"))
         tokens = token_manager.get_user_active_tokens(user_id)
@@ -494,5 +437,5 @@ def cleanup_tokens():
     except Exception as e:
         logger.error(f"Erro na limpeza de tokens: {e}")
         return jsonify({"success": False, "message": "Erro na limpeza de tokens"}), 500
-        logger.error(f"Erro na limpeza de tokens: {e}")
-        return jsonify({"success": False, "message": "Erro na limpeza de tokens"}), 500
+
+

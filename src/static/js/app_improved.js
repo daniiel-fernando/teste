@@ -793,7 +793,7 @@ const Messages = {
     }
 
     if (AppState.selectedRecipients.length === 0 && AppState.selectedOU !== "all") {
-      Toast.error("Selecione pelo menos um destinatário");
+      Toast.error("Selecione pelo menos um destinatário ou 'Todas as OUs'");
       return;
     }
 
