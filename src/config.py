@@ -30,4 +30,6 @@ class Config:
     def get_db_path():
         """Retorna o caminho absoluto do banco de dados SQLite"""
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        return os.path.abspath(os.path.join(base_dir, "..", Config.DATABASE_PATH))
+        return os.path.abspath(os.path.join(base_dir, Config.DATABASE_PATH))
+
+

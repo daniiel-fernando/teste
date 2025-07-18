@@ -491,3 +491,133 @@ def get_message_statistics():
 
 # Inicializa tabela ao importar o módulo
 init_message_status_table()
+
+
+@messages_bp.route("/api/messages/send", methods=["POST"])
+@require_auth
+def send_message():
+    """
+    Envia uma nova mensagem para os computadores.
+    """
+    try:
+        title = request.form.get("title")
+        content = request.form.get("content")
+        recipients = request.form.getlist("recipients")
+        target_ou = request.form.get("target_ou")
+        urgent = request.form.get("urgent") == "true"
+        confirmation_required = request.form.get("require_read_confirmation") == "true"
+        sound_enabled = request.form.get("sound") == "true"
+        image_file = request.files.get("image")
+
+        if not title or not content:
+            return jsonify({"success": False, "message": "Título e conteúdo são obrigatórios"}), 400
+
+        if not recipients and target_ou != "all":
+            return jsonify({"success": False, "message": "Selecione pelo menos um destinatário ou 'Todas as OUs'"}), 400
+
+        image_path = None
+        if image_file:
+            # Salvar imagem (simplificado, em um ambiente real, faria validações e armazenamento seguro)
+            upload_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "uploads")
+            os.makedirs(upload_folder, exist_ok=True)
+            image_filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{image_file.filename}"
+            image_path = os.path.join(upload_folder, image_filename)
+            image_file.save(image_path)
+            image_path = image_filename # Salva apenas o nome do arquivo no DB
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Inserir mensagem no banco de dados
+        cursor.execute(
+            """
+            INSERT INTO messages (title, content, image_path, urgent, confirmation_required, sound_enabled, recipients, target_ou, sender_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                title,
+                content,
+                image_path,
+                urgent,
+                confirmation_required,
+                sound_enabled,
+                json.dumps(recipients), # Armazena como JSON string
+                target_ou,
+                request.user.get("id") # Obtém o ID do usuário logado
+            ),
+        )
+        message_id = cursor.lastrowid
+
+        # Para cada computador que deve receber a mensagem, insere um registro em message_read_status
+        if target_ou == "all":
+            cursor.execute("SELECT id, computer_name FROM computers")
+            computers_to_notify = cursor.fetchall()
+        else:
+            # Busca computadores pelos departamentos selecionados
+            placeholders = ", ".join(["?"] * len(recipients))
+            cursor.execute(f"SELECT id, computer_name FROM computers WHERE department IN ({placeholders})", recipients)
+            computers_to_notify = cursor.fetchall()
+
+        for comp_id, comp_name in computers_to_notify:
+            cursor.execute(
+                "INSERT INTO message_read_status (message_id, computer_id, computer_name, status) VALUES (?, ?, ?, ?)",
+                (message_id, comp_id, comp_name, "unread"),
+            )
+
+        conn.commit()
+        conn.close()
+
+        logger.info(f"Mensagem '{title}' enviada com sucesso para {len(computers_to_notify)} computadores.")
+        return jsonify({"success": True, "message": "Mensagem enviada com sucesso!"}), 200
+
+    except Exception as e:
+        logger.error(f"Erro ao enviar mensagem: {e}")
+        return jsonify({"success": False, "message": "Erro ao enviar mensagem. Verifique sua conexão e tente novamente."}), 500
+
+
+
+
+
+@messages_bp.route("/api/messages/history")
+@require_auth
+def get_message_history():
+    """
+    Obtém o histórico de mensagens enviadas.
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT m.id, m.title, m.content, m.image_path, m.urgent, m.confirmation_required, m.sound_enabled, m.created_at, u.name as sender_name, m.recipients
+            FROM messages m
+            LEFT JOIN users u ON m.sender_id = u.id
+            ORDER BY m.created_at DESC
+            LIMIT 100
+            """
+        )
+        messages = []
+        for row in cursor.fetchall():
+            message = {
+                "id": row[0],
+                "title": row[1],
+                "content": row[2],
+                "image_path": row[3],
+                "urgent": bool(row[4]),
+                "confirmation_required": bool(row[5]),
+                "sound_enabled": bool(row[6]),
+                "timestamp": row[7],
+                "sender_name": row[8],
+                "recipients": json.loads(row[9]) if row[9] else [] # Carrega de JSON string
+            }
+            messages.append(message)
+
+        conn.close()
+        return jsonify({"success": True, "messages": messages}), 200
+
+    except Exception as e:
+        logger.error(f"Erro ao obter histórico de mensagens: {e}")
+        return jsonify({"success": False, "message": "Erro ao obter histórico de mensagens"}), 500
+
+

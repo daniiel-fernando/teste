@@ -510,7 +510,7 @@ Para ver o status completo, execute o programa novamente.
             if not self.computer_id:
                 return
             
-            result = self.make_request("GET", f"/api/messages/for-computer/{self.computer_id}")
+            result = self.make_request("GET", f"/api/messages/for-computer/{self.computer_name}")
             if result and result.get("success") and result.get("messages"):
                 for message in result["messages"]:
                     self.show_notification(message)

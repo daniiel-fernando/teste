@@ -792,7 +792,7 @@ const Messages = {
       return;
     }
 
-    if (AppState.selectedRecipients.length === 0) {
+    if (AppState.selectedRecipients.length === 0 && AppState.selectedOU !== "all") {
       Toast.error("Selecione pelo menos um destinatário");
       return;
     }
@@ -803,7 +803,7 @@ const Messages = {
       const messageData = {
         title: title,
         content: content,
-        recipients: AppState.selectedRecipients,
+        recipients: AppState.selectedRecipients.length > 0 ? AppState.selectedRecipients : [],
         target_ou: AppState.selectedOU || "all",
         urgent: form.urgent?.checked || false,
         require_read_confirmation: form.confirmation?.checked || false,

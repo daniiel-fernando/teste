@@ -617,41 +617,28 @@ def register_routes(app):
             # Se uma OU específica foi selecionada, filtra os destinatários
             if target_ou and target_ou != "all":
                 try:
-                    ou_mapping = {
-                        "ti": "OU=TI,OU=MATRIZ,OU=@Computadores,OU=SERGIPE.SEDE,OU=JOTANUNES.NET,DC=jotanunes,DC=net",
-                        "gestores": "OU=GESTORES,OU=MATRIZ,OU=@Computadores,OU=SERGIPE.SEDE,OU=JOTANUNES.NET,DC=jotanunes,DC=net",
-                        "operacional": "OU=OPERACIONAL,OU=MATRIZ,OU=@Computadores,OU=SERGIPE.SEDE,OU=JOTANUNES.NET,DC=jotanunes,DC=net",
-                        "diretoria": "OU=DIRETORIA,OU=MATRIZ,OU=@Computadores,OU=SERGIPE.SEDE,OU=JOTANUNES.NET,DC=jotanunes,DC=net",
-                    }
-                    if target_ou in ou_mapping:
-                        ou_dn = ou_mapping[target_ou]
-                        computers_in_ou = ad_auth_instance.get_computers_in_ou(ou_dn)
-                        if computers_in_ou:
-                            recipients = [comp["name"] for comp in computers_in_ou]
-                        else:
-                            conn = sqlite3.connect(
-                                os.path.join(project_root, Config.DATABASE_PATH)
-                            )
-                            cursor = conn.cursor()
-                            cursor.execute(
-                                'SELECT computer_name FROM computers WHERE department = ? AND status = "online"',
-                                (target_ou.upper(),),
-                            )
-                            recipients = [row[0] for row in cursor.fetchall()]
-                            conn.close()
+                    conn = sqlite3.connect(Config.get_db_path())
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        'SELECT computer_name FROM computers WHERE department = ? AND status = "online"',
+                        (target_ou.upper(),),
+                    )
+                    recipients = [row[0] for row in cursor.fetchall()]
+                    conn.close()
                 except Exception as e:
                     logger.error(f"Erro ao filtrar por OU {target_ou}: {e}")
+            elif target_ou == "all":
+                try:
+                    conn = sqlite3.connect(Config.get_db_path())
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        'SELECT computer_name FROM computers WHERE status = "online"'
+                    )
+                    recipients = [row[0] for row in cursor.fetchall()]
+                    conn.close()
+                except Exception as e:
+                    logger.error(f"Erro ao buscar todos os computadores online: {e}")
 
-            if not recipients:
-                return (
-                    jsonify(
-                        {
-                            "success": False,
-                            "message": "Selecione pelo menos um destinatário ou nenhum computador encontrado na OU selecionada",
-                        }
-                    ),
-                    400,
-                )
 
             # Salva mensagem no banco
             conn = sqlite3.connect(Config.get_db_path())
